@@ -1,7 +1,11 @@
 
 var config = require('config-yml');
 
-export default (prop) => (process.env.PRODUCTION) ? process.env[prop] : config[app][url]   
+let handler = function(prop) {
+    return  (process.env.PRODUCTION) ? process.env[prop] : config.auth[prop]   
+} 
+
+module.exports = handler;  
 
 
 

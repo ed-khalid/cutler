@@ -1,5 +1,6 @@
 const Hapi = require('hapi')
 const Wreck = require('wreck');
+const config = require('./config'); 
 
 const Server = new Hapi.Server(); 
 
@@ -16,7 +17,7 @@ Server.route({
         let query = req.query; 
         if (query['hub.mode'] === 'subscribe' 
              && query['hub.challenge'] 
-            && query['hub.verify_token'] == process.env.VERIFY_TOKEN  
+            && query['hub.verify_token'] == config('VERIFY_TOKEN')  
         ) {
             reply(query['hub.challenge']).code(200);
         } 
@@ -25,10 +26,6 @@ Server.route({
         }
     } 
 }); 
-
-sendMessage = (sender_id, message) => {
-} 
-
 
 Server.route({
 
@@ -45,13 +42,15 @@ Server.route({
                         let recipient_id = event['recipient']['id'] 
                         let msg = event['message']['text'] 
                         Wreck.post( 
-                            `https://graph.facebook.com/v2.6/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`
+                            `https://graph.facebook.com/v2.6/me/messages?access_token=${config('PAGE_ACCESS_TOKEN')}`
                             ,{payload: {
-                                "recipient" : sender_id 
-                                ,"message": msg }
+                                "recipient" : {"id" :  sender_id  }
+                                ,"message": {"text" :  "Wassup My Boi?" } }
                             }
                             ,(err,res,payload) => {
                                 if (err) console.error('ERROR: ' +err)
+                                    if (res) console.log(res);
+
                             }
                         )
                     }
