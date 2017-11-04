@@ -50,7 +50,7 @@ Server.route({
         if (payload['object'] === 'page') {
             payload['entry'].forEach(entry => {
                 entry['messaging'].forEach(event => {
-                    if (event.get('message')) {
+                    if (event['message']) {
                         let sender_id = event['sender']['id'] 
                         let recipient_id = event['recipient']['id'] 
                         let msg = event['message']['text'] 
