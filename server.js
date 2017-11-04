@@ -1,4 +1,5 @@
 const Hapi = require('hapi')
+const Wreck = require('wreck');
 
 const Server = new Hapi.Server(); 
 
@@ -23,7 +24,45 @@ Server.route({
             reply('Verification Token Mismatch').code(403);
         }
     } 
+}); 
+
+sendMessage = (sender_id, message) => {
+    Wreck.post( 
+        `https://graph.facebook.com/v2.6/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`
+        ,{payload: {
+            "recipient" : sender_id 
+            ,"message": message }
+        }
+        ,(err,res,payload) => {
+            if (err) console.error('ERROR: ' +err)
+        }
+    )
+} 
+
+
+Server.route({
+
+    method: 'POST'
+    ,path:  '/'
+    ,handler: (req,reply) => {
+        let payload = req.payload;
+        console.log(payload);
+        if (payload['object'] === 'page') {
+            payload['entry'].forEach(entry => {
+                entry['messaging'].forEach(event => {
+                    if (event.get('message')) {
+                        let sender_id = event['sender']['id'] 
+                        let recipient_id = event['recipient']['id'] 
+                        let msg = event['message']['text'] 
+                        sendMesssage(sender_id, 'Wassup My Boi');  
+                    }
+                })
+            })
+        }
+        reply('OK').code(200);
+    }
 });
+
 
 Server.start(() => {
     console.log('Server running at: ', Server.info.uri);
