@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/ed-khalid/cutler#readme",
   "dependencies": {
+    "config-yml": "^0.8.0",
     "hapi": "^16.6.2"
   }
 }

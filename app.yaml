@@ -1,2 +1,9 @@
 runtime: nodejs
 env: flex
+env_variables: 
+  PAGE_ACCESS_TOKEN: 'EAAb8It6UorcBAKLeyJACyPneVMZCPI5QefljG22tub4ADOtdKIjtSXKJ5oxWvZCEthRiJzWQYcEZC9iVZCGGV6KQV1JiPx2uhdpAwSaA7wY9YFcaZCvedQfZCxOD4FcnXzp7ObXW37ngLCo1hWofSwBXtkFVsQqUY1A2t6NbRMNsnpQ6x0ty6J' 
+  VERIFY_TOKEN: 'test_token' 
+  APP_SECRET: 'e7d1a3dc7cb2d5d0b6f44460a45c295f'
+  PRODUCTION: true 
+  
+  
