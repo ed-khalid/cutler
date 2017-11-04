@@ -27,16 +27,6 @@ Server.route({
 }); 
 
 sendMessage = (sender_id, message) => {
-    Wreck.post( 
-        `https://graph.facebook.com/v2.6/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`
-        ,{payload: {
-            "recipient" : sender_id 
-            ,"message": message }
-        }
-        ,(err,res,payload) => {
-            if (err) console.error('ERROR: ' +err)
-        }
-    )
 } 
 
 
@@ -54,7 +44,16 @@ Server.route({
                         let sender_id = event['sender']['id'] 
                         let recipient_id = event['recipient']['id'] 
                         let msg = event['message']['text'] 
-                        sendMesssage(sender_id, 'Wassup My Boi');  
+                        Wreck.post( 
+                            `https://graph.facebook.com/v2.6/me/messages?access_token=${process.env.PAGE_ACCESS_TOKEN}`
+                            ,{payload: {
+                                "recipient" : sender_id 
+                                ,"message": msg }
+                            }
+                            ,(err,res,payload) => {
+                                if (err) console.error('ERROR: ' +err)
+                            }
+                        )
                     }
                 })
             })
