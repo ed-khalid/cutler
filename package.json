@@ -1,0 +1,34 @@
+{
+  "name": "cutler",
+  "version": "0.0.1",
+  "description": "Capital One Hackathon Entry",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ed-khalid/cutler.git"
+  },
+  "keywords": [
+    "chatbot"
+  ],
+  "contributors": [
+    {
+      "name": "Ed Khalid",
+      "email": "ed.khalid1@gmail.com"
+    },
+    {
+      "name": "Roland Jeannier",
+      "email": "rtjeannier@gmail.com"
+    }
+  ],
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ed-khalid/cutler/issues"
+  },
+  "homepage": "https://github.com/ed-khalid/cutler#readme",
+  "dependencies": {
+    "hapi": "^16.6.2"
+  }
+}
