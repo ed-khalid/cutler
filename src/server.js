@@ -6,8 +6,35 @@ const CapitalOne = require('./capitalOne');
 const Moment = require('moment');
 const Cutler = require('./cutler')
 
+var wit = require('./services/wit').getWit()
+
 // LETS SAVE USER SESSIONS
 var sessions = {}
+
+var findOrCreateSession = function (fbid) {
+  var sessionId
+
+  // DOES USER SESSION ALREADY EXIST?
+  Object.keys(sessions).forEach(k => {
+    if (sessions[k].fbid === fbid) {
+      // YUP
+      sessionId = k
+    }
+  })
+
+  // No session so we will create one
+  if (!sessionId) {
+    sessionId = new Date().toISOString()
+    sessions[sessionId] = {
+      fbid: fbid,
+      context: {
+        _fbid_: fbid
+      }
+    }
+  }
+
+  return sessionId
+
 
 const Server = new Hapi.Server();
 
@@ -34,7 +61,6 @@ Server.route({
         }
     }
 });
-
 Server.route({
 
     method: 'POST'
@@ -45,77 +71,42 @@ Server.route({
             payload['entry'].forEach(entry => {
                 entry['messaging'].forEach(event => {
                     if (event['message']) {
-
-                        let sender_id = event['sender']['id'] 
+                        let sender_id = event['sender']['id']
                         console.log('sender is ' + sender_id);
-                        let recipient_id = event['recipient']['id'] 
+                        let recipient_id = event['recipient']['id']
                         console.log('recipient is ' + recipient_id);
-                        let msg = event['message']['text'] 
+                        let msg = event['message']['text']
 
                         if (msg == 'How Much Did I Spend This Month?') {
-                            let month =  Moment().month(); 
-                            CapitalOne.listTransactionsMonth(sender_id,month).then(amount => {
-                                Cutler.talk(sender_id, 'You spent $' + amount +' this month.')
-                            })
-                        }
-
-                        else if (msg == 'On What?') {
-                            let month =  Moment().month(); 
-                            CapitalOne.listTransactionsByCategory(sender_id,month).then(res => {
-                                console.log(res);
-                                return Cutler.talk(sender_id, 'You spent $' + 0 +' this month.')
-                            });
-                        }
-
-                        else if (msg.includes('set') && msg.includes('budget') && msg.includes('month')) {
-                            let budgetLimit = msg.match(/\d/g).join('');
-                            CapitalOne.setBudgetLimit(sender_id, budgetLimit).then(resp => {
-                                Cutler.talk(sender_id, 'OK, I have set your budget for $' + budgetLimit);
-                            })
-                        }
-
-                        else if (!msg.includes('set') && msg.includes('budget') && msg.includes('month')) {
                             let month =  Moment().month();
-                            CapitalOne.checkWithinBudget(sender_id,month).then(resp => {
-                                let answer = (resp.answer) ? 'You are within your budget of $' + resp.budget + 
-                                '. You have spent $' + resp.sum + ' so far this month.' 
-                                : 'You are over your budget of $' + resp.budget +
-                                '. You have spent $' + resp.sum + ' so far this month.';
-                                Cutler.talk(sender_id, answer); 
-                            });
+                            return CapitalOne.listTransactionsMonth(sender_id,month).then(amount => {
+                                return Cutler.talk(sender_id, 'You spent $' + amount +' this month.')
+                            }) ;
                         }
 
-                        else if ( (msg.includes('family') || msg.includes('members')) && (msg.includes('show') || msg.includes('list')) ) {
-                            CapitalOne.listFamilyMembers(sender_id).then(resp => {
-                                Cutler.talk(sender_id, JSON.stringify(resp))
-                            }, err => {
-                                console.log(err);
-                                Cutler.talk(sender_id, "INDIGESTION! TOO MUCH SOYLENT. Try again");
-                            })
-
-                        }
-
-                        else if (msg == 'What can I buy with my reward points?') {
+                        if (msg == 'What can I buy with my reward points?') {
                             let month =  Moment().month();
                             CapitalOne.listRewards(sender_id).then(amount => {
+
                               message = 'Your have have ' + amount + ' of points to spend. Would you like a recommendation based off your purchase history?'
+
                                 Cutler.talk(sender_id, message);
-                            });
+                            }) ;
                         }
 
-                        else if (msg == "Lower Jimmy's allowance by $50 dollars.") {
+                        if (msg == "Lower Jimmy's allowance by $50 dollars.") {
                             let month =  Moment().month();
                             CapitalOne.getAllowance(sender_id).then(amount => {
-                                CapitalOne.setAllowance(sender_id, amount-50).then(res => {
-                                    message = "You have set Jimmy's allowance to " + (amount-50) + ' from ' + amount + "."
-                                    Cutler.talk(sender_id, message);
-                                });
-                            }) 
-                        }
-                        else {
-                            Cutler.talk(sender_id, 'Hello!')
-                        }
+                                    CapitalOne.setAllowance(sender_id, amount-50).then(res => {
 
+                              message = "You have set Jimmy's allowance to " + (amount-50) + ' from ' + amount + "."
+
+                                Cutler.talk(sender_id, message);
+                            }) ;
+                        })
+                        else {
+                            return Cutler.talk(sender_id, "ADIOS");
+                        }
                     }
                 })
             })

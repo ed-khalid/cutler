@@ -5,13 +5,13 @@ const LuCategory = require('./LuCategory');
 const BUDGET = {};
 const CAPITAL_ID = 401930000;
 const facebookToCapitalId  = (id) => {
-  let map = { 
-     1732853743453321:401930000 
-    ,142169726418680:401930000 
+  let map = {
+     1732853743453321:401930000
+    ,142169726418680:401930000
   }
-  
-  return map[id] || 401950000 
-} 
+
+  return map[id] || 401950000
+}
 
 let state = {
   transactions: undefined
@@ -22,19 +22,19 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
 
   getBudget  =  (fbid) => {
     return BUDGET[facebookToCapitalId(fbid)];
-  }   
+  }
  setBudget = (fbid, amount) => {
-    let customerId = facebookToCapitalId(fbid); 
-    if (!customerId) return null; 
+    let customerId = facebookToCapitalId(fbid);
+    if (!customerId) return null;
     BUDGET[customerId] = amount;
-  }  
+  }
 
   listFamilyMembers=(fbid) => {
-    let customerId = facebookToCapitalId(fbid); 
-    if (!customerId) return Promise.resolve(null); 
-    return Wreck.post(API_URL+'customers/', 
+    let customerId = facebookToCapitalId(fbid);
+    if (!customerId) return Promise.resolve(null);
+    return Wreck.post(API_URL+'customers/',
     {payload: {
-      "customer_id": customerId 
+      "customer_id": customerId
       ,"team_name": "ed_and_roland"
     }
     }).then(function(res) {
@@ -43,7 +43,7 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
       return Wreck.post(API_URL+'accounts/', {
         payload:{
           "account_id" : accountId
-        } 
+        }
       }).then(function(res) {
       let resArray = JSON.parse(res.payload.toString())[0];
       let familyIds =  resArray.authorized_users.map(it => it.customer_id)
@@ -63,38 +63,38 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
 
   //expects month to be in mm format
   listTransactionsMonth= (fbid, month) => {
-    let customerId = facebookToCapitalId(fbid); 
-    if (!customerId) return Promise.resolve(null); 
-    return Wreck.post(API_URL+'transactions/', 
+    let customerId = facebookToCapitalId(fbid);
+    if (!customerId) return Promise.resolve(null);
+    return Wreck.post(API_URL+'transactions/',
       {payload: {
                      "date_from": month + "/01/2017"
-                     ,"date_to": (month+1)+"/01/2017" 
+                     ,"date_to": (month+1)+"/01/2017"
                      ,"customer_id": customerId
                 }
       }
-     ).then(function(res)  {  
-       let resArray = JSON.parse(res.payload.toString())[0]  
-        state['transactions'] = resArray.customers[0].transactions; 
+     ).then(function(res)  {
+       let resArray = JSON.parse(res.payload.toString())[0]
+        state['transactions'] = resArray.customers[0].transactions;
        let sum =  state['transactions'].reduce((prev, curr) => prev + curr.amount, 0)
        return Math.round((sum * 100) / 100).toFixed(2);
-    }) 
+    })
   }
   checkWithinBudget=(fbid,month) => {
-    let budget = getBudget(fbid); 
+    let budget = getBudget(fbid);
     return listTransactionsMonth(fbid,month).then(sum => {
-      let answer = (budget >= sum); 
+      let answer = (budget >= sum);
       return  {
-        answer: answer 
-        ,budget: budget 
+        answer: answer
+        ,budget: budget
         ,sum : sum
-      } 
+      }
     })
-  } 
+  }
 
   setBudgetLimit=(fbid,limit) => {
     setBudget(fbid, limit)
-    return Promise.resolve(); 
-  } 
+    return Promise.resolve();
+  }
 
 
   listTransactionsByCategory = (fbid, month) => {
@@ -106,20 +106,20 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
         if (category) {
           let name  = acc[category.cat_name];
           if (name) {
-            acc[name]  += curr.amount;   
+            acc[name]  += curr.amount;
           }
           else {
-            acc[category.cat_name] = curr.amount 
+            acc[category.cat_name] = curr.amount
           }
         }
         return acc;
-      },{}) 
-      return acc; 
+      },{})
+      return acc;
     }
     else {
       return Promise.resolve();
     }
-  }  
+  }
 
 module.exports ={
   listTransactionsByCategory:listTransactionsByCategory
@@ -127,6 +127,4 @@ module.exports ={
   ,listFamilyMembers:listFamilyMembers
   ,setBudgetLimit:setBudgetLimit
   ,checkWithinBudget:checkWithinBudget
-};  
-
-
+};
