@@ -4,7 +4,8 @@
   "description": "Capital One Hackathon Entry",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "start": "node src/server.js"
+    ,"test": "test"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,8 @@
   "homepage": "https://github.com/ed-khalid/cutler#readme",
   "dependencies": {
     "config-yml": "^0.8.0",
-    "hapi": "^16.6.2"
+    "hapi": "^16.6.2",
+    "moment": "^2.19.1",
+    "node-wit": "^4.3.0"
   }
 }
