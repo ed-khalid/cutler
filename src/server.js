@@ -85,6 +85,16 @@ Server.route({
                             });
                         }
 
+                        else if ( (msg.includes('family') || msg.includes('members')) && (msg.includes('show') || msg.includes('list')) ) {
+                            CapitalOne.listFamilyMembers(sender_id).then(resp => {
+                                Cutler.talk(sender_id, JSON.stringify(resp))
+                            }, err => {
+                                console.log(err);
+                                Cutler.talk(sender_id, "INDIGESTION! TOO MUCH SOYLENT. Try again");
+                            })
+
+                        }
+
                         else if (msg == 'What can I buy with my reward points?') {
                             let month =  Moment().month();
                             CapitalOne.listRewards(sender_id).then(amount => {

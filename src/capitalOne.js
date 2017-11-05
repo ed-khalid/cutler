@@ -29,10 +29,42 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
     BUDGET[customerId] = amount;
   }  
 
+  listFamilyMembers=(fbid) => {
+    let customerId = facebookToCapitalId(fbid); 
+    if (!customerId) return Promise.resolve(null); 
+    return Wreck.post(API_URL+'customers/', 
+    {payload: {
+      "customer_id": customerId 
+      ,"team_name": "ed_and_roland"
+    }
+    }).then(function(res) {
+      let resArray = JSON.parse(res.payload.toString())[0];
+      let accountId = resArray.account_id
+      return Wreck.post(API_URL+'accounts/', {
+        payload:{
+          "account_id" : accountId
+        } 
+      }).then(function(res) {
+      let resArray = JSON.parse(res.payload.toString())[0];
+      let familyIds =  resArray.authorized_users.map(it => it.customer_id)
+      let promises =  familyIds.map(id => Wreck.post(API_URL+'customers', {payload: {"customer_id":id} }).then(function(res) {
+        let resArray = JSON.parse(res.payload.toString())[0];
+        let name = resArray.customers[0].first_name
+        return name;
+      }))
+      return Promise.all(promises)
+      })
+      .catch(err => {
+        console.error(err)
+        return Promise.resolve('I must have had too much Soylent. Indigestion');
+      })
+    })
+  }
+
   //expects month to be in mm format
   listTransactionsMonth= (fbid, month) => {
-    let customerId = CAPITAL_ID; 
-    if (!customerId) return null; 
+    let customerId = facebookToCapitalId(fbid); 
+    if (!customerId) return Promise.resolve(null); 
     return Wreck.post(API_URL+'transactions/', 
       {payload: {
                      "date_from": month + "/01/2017"
@@ -64,6 +96,7 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
     return Promise.resolve(); 
   } 
 
+
   listTransactionsByCategory = (fbid, month) => {
 
     if (state['transactions']) {
@@ -91,6 +124,7 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
 module.exports ={
   listTransactionsByCategory:listTransactionsByCategory
   ,listTransactionsMonth:listTransactionsMonth
+  ,listFamilyMembers:listFamilyMembers
   ,setBudgetLimit:setBudgetLimit
   ,checkWithinBudget:checkWithinBudget
 };  
