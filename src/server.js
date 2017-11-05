@@ -6,34 +6,9 @@ const CapitalOne = require('./capitalOne');
 const Moment = require('moment');
 const Cutler = require('./cutler')
 
-var wit = require('./services/wit').getWit()
 
 // LETS SAVE USER SESSIONS
 var sessions = {}
-
-var findOrCreateSession = function (fbid) {
-  var sessionId
-
-  // DOES USER SESSION ALREADY EXIST?
-  Object.keys(sessions).forEach(k => {
-    if (sessions[k].fbid === fbid) {
-      // YUP
-      sessionId = k
-    }
-  })
-
-  // No session so we will create one
-  if (!sessionId) {
-    sessionId = new Date().toISOString()
-    sessions[sessionId] = {
-      fbid: fbid,
-      context: {
-        _fbid_: fbid
-      }
-    }
-  }
-
-  return sessionId
 
 
 const Server = new Hapi.Server();
@@ -77,24 +52,56 @@ Server.route({
                         console.log('recipient is ' + recipient_id);
                         let msg = event['message']['text']
 
-                        if (msg == 'How Much Did I Spend This Month?') {
+                        if (msg.includes('spend') && msg.includes('month')) {
                             let month =  Moment().month();
                             return CapitalOne.listTransactionsMonth(sender_id,month).then(amount => {
                                 return Cutler.talk(sender_id, 'You spent $' + amount +' this month.')
                             }) ;
                         }
 
-                        if (msg == 'What can I buy with my reward points?') {
+                        else if (msg.includes('budget') && msg.includes('month') &&!msg.includes('set')) {
+                            CapitalOne.checkWithinBudget(sender_id,month).then(resp => {
+                                let answer = (resp.answer) ? 'You are within your budget of $' + resp.budget + 
+                                '. You have spent $' + resp.sum + ' so far this month.' 
+                                : 'You are over your budget of $' + resp.budget +
+                                '. You have spent $' + resp.sum + ' so far this month.';
+                                Cutler.talk(sender_id, answer); 
+                            });
+                        }
+                        else if (msg.includes('budget') && msg.includes('month') && msg.includes('set')) {
+                            let number = msg.match(/\d/g).join('');   
+                            CapitalOne.setBudgetLimit(sender_id, number).then(resp => {
+                                Cutler.talk(sender_id, 'OK. I have set your budget to  $' + number); 
+                            })
+                        }
+
+                        else if ( (msg.includes('family') || msg.includes('members')) && (msg.includes('show') || msg.includes('list')) ) {
+                            CapitalOne.listFamilyMembers(sender_id).then(fam => {
+                                  Cutler.showList(sender_id, fam.slice(1))
+                            }, err => {
+                                console.log(err);
+                                Cutler.talk(sender_id, "INDIGESTION! TOO MUCH SOYLENT. Try again");
+                            })
+
+                        }
+
+                        else if (msg == 'What can I buy with my reward points?') {
                             let month =  Moment().month();
                             CapitalOne.listRewards(sender_id).then(amount => {
-
                               message = 'Your have have ' + amount + ' of points to spend. Would you like a recommendation based off your purchase history?'
-
                                 Cutler.talk(sender_id, message);
                             }) ;
                         }
 
-                        if (msg == "Lower Jimmy's allowance by $50 dollars.") {
+                        else if (msg == 'On What?') {
+                            let month =  Moment().month();
+                            CapitalOne.listTransactionsByCategory(sender_id, month).then(categories => {
+                                Cutler.showList(sender_id, categories); 
+                            });
+                        }
+
+
+                        else if (msg == "Lower Jimmy's allowance by $50 dollars.") {
                             let month =  Moment().month();
                             CapitalOne.getAllowance(sender_id).then(amount => {
                                     CapitalOne.setAllowance(sender_id, amount-50).then(res => {
@@ -103,9 +110,10 @@ Server.route({
 
                                 Cutler.talk(sender_id, message);
                             }) ;
-                        })
+                          })
+                        }
                         else {
-                            return Cutler.talk(sender_id, "ADIOS");
+                            return Cutler.talk(sender_id, "Hello!");
                         }
                     }
                 })
@@ -118,4 +126,4 @@ Server.route({
 
 Server.start(() => {
     console.log('Server running at: ', Server.info.uri);
-})
+});

@@ -1,5 +1,6 @@
 const Wreck = require('wreck');
-const LuCategory = require('./LuCategory');
+const LuCategory = require('./cat_lookup');
+const _ = require('lodash')
 
 
 const BUDGET = {};
@@ -49,8 +50,9 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
       let familyIds =  resArray.authorized_users.map(it => it.customer_id)
       let promises =  familyIds.map(id => Wreck.post(API_URL+'customers', {payload: {"customer_id":id} }).then(function(res) {
         let resArray = JSON.parse(res.payload.toString())[0];
-        let name = resArray.customers[0].first_name
-        return name;
+        let name = resArray.customers[0].first_name;
+        let lname = resArray.customers[0].last_name;
+        return { title: name, subtitle: lname  } ;
       }))
       return Promise.all(promises)
       })
@@ -100,26 +102,31 @@ const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-
   listTransactionsByCategory = (fbid, month) => {
 
     if (state['transactions']) {
-      state.transactions.reduce((acc,curr) => {
+      let stuff = state.transactions.reduce((acc,curr) => {
         let merchant_name = curr['merchant_name']
-        let category =  LuCategory.find(it => it['merch_name'].toUpperCase() == merchant_name.toUpperCase());
+        let category =  LuCategory.find(it => it['merch_name'].trim().toUpperCase() == merchant_name.toUpperCase());
         if (category) {
           let name  = acc[category.cat_name];
           if (name) {
-            acc[name]  += curr.amount;
+            acc[category.cat_name]  = round(parseFloat(name)+ curr.amount);
           }
           else {
-            acc[category.cat_name] = curr.amount
+            acc[category.cat_name] = round(curr.amount);
           }
         }
         return acc;
       },{})
-      return acc;
+      let inverted = _.invert(stuff);
+      let top4 = Object.values(stuff).sort().slice(0,4).map(val => { let key =inverted[val]; let retv ={}; retv['title']=key; retv['subtitle']=val; return retv; }); 
+      return Promise.resolve(top4); 
     }
     else {
       return Promise.resolve();
     }
   }
+
+round = (num) =>Math.round((num * 100) / 100).toFixed(2); 
+
 
 module.exports ={
   listTransactionsByCategory:listTransactionsByCategory
