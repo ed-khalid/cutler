@@ -1,25 +1,36 @@
 const Wreck = require('wreck');
+const LuCategory = require('./LuCategory');
 
 
 const BUDGET = {};
 const CAPITAL_ID = 401930000;
-const facebookToCapitalId  = {
-  1732853743453321:401930000 
- ,142169726418680:401930000 
+const facebookToCapitalId  = (id) => {
+  let map = { 
+     1732853743453321:401930000 
+    ,142169726418680:401930000 
+  }
+  
+  return map[id] || 401950000 
 } 
+
+let state = {
+  transactions: undefined
+}
+
+
 const API_URL = 'https://3hkaob4gkc.execute-api.us-east-1.amazonaws.com/prod/au-hackathon/';
 
-let _export = {
-  getBudget  :  (customerId) => {
-    return BUDGET[customerId];
+  getBudget  =  (fbid) => {
+    return BUDGET[facebookToCapitalId(fbid)];
   }   
- ,setBudget : (fbid, amount) => {
-    let customerId = CAPITAL_ID;  
+ setBudget = (fbid, amount) => {
+    let customerId = facebookToCapitalId(fbid); 
     if (!customerId) return null; 
     BUDGET[customerId] = amount;
   }  
+
   //expects month to be in mm format
-  ,listTransactionsMonth: (fbid, month) => {
+  listTransactionsMonth= (fbid, month) => {
     let customerId = CAPITAL_ID; 
     if (!customerId) return null; 
     return Wreck.post(API_URL+'transactions/', 
@@ -31,13 +42,57 @@ let _export = {
       }
      ).then(function(res)  {  
        let resArray = JSON.parse(res.payload.toString())[0]  
-       let sum =  resArray.customers[0].transactions.reduce((prev, curr) => prev + curr.amount, 0)
+        state['transactions'] = resArray.customers[0].transactions; 
+       let sum =  state['transactions'].reduce((prev, curr) => prev + curr.amount, 0)
        return Math.round((sum * 100) / 100).toFixed(2);
     }) 
   }
-}  
+  checkWithinBudget=(fbid,month) => {
+    let budget = getBudget(fbid); 
+    return listTransactionsMonth(fbid,month).then(sum => {
+      let answer = (budget >= sum); 
+      return  {
+        answer: answer 
+        ,budget: budget 
+        ,sum : sum
+      } 
+    })
+  } 
 
+  setBudgetLimit=(fbid,limit) => {
+    setBudget(fbid, limit)
+    return Promise.resolve(); 
+  } 
 
-module.exports = _export;  
+  listTransactionsByCategory = (fbid, month) => {
+
+    if (state['transactions']) {
+      state.transactions.reduce((acc,curr) => {
+        let merchant_name = curr['merchant_name']
+        let category =  LuCategory.find(it => it['merch_name'].toUpperCase() == merchant_name.toUpperCase());
+        if (category) {
+          let name  = acc[category.cat_name];
+          if (name) {
+            acc[name]  += curr.amount;   
+          }
+          else {
+            acc[category.cat_name] = curr.amount 
+          }
+        }
+        return acc;
+      },{}) 
+      return acc; 
+    }
+    else {
+      return Promise.resolve();
+    }
+  }  
+
+module.exports ={
+  listTransactionsByCategory:listTransactionsByCategory
+  ,listTransactionsMonth:listTransactionsMonth
+  ,setBudgetLimit:setBudgetLimit
+  ,checkWithinBudget:checkWithinBudget
+};  
 
 

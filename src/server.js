@@ -6,35 +6,8 @@ const CapitalOne = require('./capitalOne');
 const Moment = require('moment');
 const Cutler = require('./cutler')
 
-var wit = require('./services/wit').getWit()
-
 // LETS SAVE USER SESSIONS
 var sessions = {}
-
-var findOrCreateSession = function (fbid) {
-  var sessionId
-
-  // DOES USER SESSION ALREADY EXIST?
-  Object.keys(sessions).forEach(k => {
-    if (sessions[k].fbid === fbid) {
-      // YUP
-      sessionId = k
-    }
-  })
-
-  // No session so we will create one
-  if (!sessionId) {
-    sessionId = new Date().toISOString()
-    sessions[sessionId] = {
-      fbid: fbid,
-      context: {
-        _fbid_: fbid
-      }
-    }
-  }
-
-  return sessionId
-
 
 const Server = new Hapi.Server();
 
@@ -61,6 +34,7 @@ Server.route({
         }
     }
 });
+
 Server.route({
 
     method: 'POST'
@@ -71,7 +45,7 @@ Server.route({
             payload['entry'].forEach(entry => {
                 entry['messaging'].forEach(event => {
                     if (event['message']) {
-<<<<<<< Updated upstream
+
                         let sender_id = event['sender']['id'] 
                         console.log('sender is ' + sender_id);
                         let recipient_id = event['recipient']['id'] 
@@ -80,48 +54,58 @@ Server.route({
 
                         if (msg == 'How Much Did I Spend This Month?') {
                             let month =  Moment().month(); 
-                            return CapitalOne.listTransactionsMonth(sender_id,month).then(amount => {
-                                return Cutler.talk(sender_id, 'You spent $' + amount +' this month.')
-=======
-                        let sender_id = event['sender']['id']
-                        let recipient_id = event['recipient']['id']
-                        let msg = event['message']['text']
-
-                        if (msg == 'Am I within budget this month?') {
-                            let month =  Moment().month();
                             CapitalOne.listTransactionsMonth(sender_id,month).then(amount => {
-                                Cutler.talk(sender_id, 'You spent $' + amount +' this month.');
->>>>>>> Stashed changes
-                            }) ;
+                                Cutler.talk(sender_id, 'You spent $' + amount +' this month.')
+                            })
                         }
 
-                        if (msg == 'What can I buy with my reward points?') {
+                        else if (msg == 'On What?') {
+                            let month =  Moment().month(); 
+                            CapitalOne.listTransactionsByCategory(sender_id,month).then(res => {
+                                console.log(res);
+                                return Cutler.talk(sender_id, 'You spent $' + 0 +' this month.')
+                            });
+                        }
+
+                        else if (msg.includes('set') && msg.includes('budget') && msg.includes('month')) {
+                            let budgetLimit = msg.match(/\d/g).join('');
+                            CapitalOne.setBudgetLimit(sender_id, budgetLimit).then(resp => {
+                                Cutler.talk(sender_id, 'OK, I have set your budget for $' + budgetLimit);
+                            })
+                        }
+
+                        else if (!msg.includes('set') && msg.includes('budget') && msg.includes('month')) {
+                            let month =  Moment().month();
+                            CapitalOne.checkWithinBudget(sender_id,month).then(resp => {
+                                let answer = (resp.answer) ? 'You are within your budget of $' + resp.budget + 
+                                '. You have spent $' + resp.sum + ' so far this month.' 
+                                : 'You are over your budget of $' + resp.budget +
+                                '. You have spent $' + resp.sum + ' so far this month.';
+                                Cutler.talk(sender_id, answer); 
+                            });
+                        }
+
+                        else if (msg == 'What can I buy with my reward points?') {
                             let month =  Moment().month();
                             CapitalOne.listRewards(sender_id).then(amount => {
-
                               message = 'Your have have ' + amount + ' of points to spend. Would you like a recommendation based off your purchase history?'
-
                                 Cutler.talk(sender_id, message);
-                            }) ;
+                            });
                         }
 
-                        if (msg == "Lower Jimmy's allowance by $50 dollars.") {
+                        else if (msg == "Lower Jimmy's allowance by $50 dollars.") {
                             let month =  Moment().month();
                             CapitalOne.getAllowance(sender_id).then(amount => {
-                                    CapitalOne.setAllowance(sender_id, amount-50).then(res => {
-
-                              message = "You have set Jimmy's allowance to " + (amount-50) + ' from ' + amount + "."
-
-                                Cutler.talk(sender_id, message);
-                            }) ;
-                        })
-                        else {
-<<<<<<< Updated upstream
-                            return Cutler.talk(sender_id, "ADIOS"); 
-=======
-                            Cutler.talk(sender_id, "I'm sorry I cannot help with that.");
->>>>>>> Stashed changes
+                                CapitalOne.setAllowance(sender_id, amount-50).then(res => {
+                                    message = "You have set Jimmy's allowance to " + (amount-50) + ' from ' + amount + "."
+                                    Cutler.talk(sender_id, message);
+                                });
+                            }) 
                         }
+                        else {
+                            Cutler.talk(sender_id, 'Hello!')
+                        }
+
                     }
                 })
             })

@@ -4,8 +4,8 @@
   "description": "Capital One Hackathon Entry",
   "main": "index.js",
   "scripts": {
-    "start": "node src/server.js"
-    ,"test": "test"
+    "start": "node src/server.js",
+    "test": "test"
   },
   "repository": {
     "type": "git",
@@ -32,7 +32,9 @@
   "dependencies": {
     "config-yml": "^0.8.0",
     "hapi": "^16.6.2",
+    "lodash": "^4.17.4",
     "moment": "^2.19.1",
-    "node-wit": "^4.3.0"
+    "node-wit": "^4.3.0",
+    "prompt": "^1.0.0"
   }
 }
