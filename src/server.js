@@ -61,17 +61,17 @@ Server.route({
 
                         else if (msg.includes('budget') && msg.includes('month') &&!msg.includes('set')) {
                             CapitalOne.checkWithinBudget(sender_id,month).then(resp => {
-                                let answer = (resp.answer) ? 'You are within your budget of $' + resp.budget + 
-                                '. You have spent $' + resp.sum + ' so far this month.' 
+                                let answer = (resp.answer) ? 'You are within your budget of $' + resp.budget +
+                                '. You have spent $' + resp.sum + ' so far this month.'
                                 : 'You are over your budget of $' + resp.budget +
                                 '. You have spent $' + resp.sum + ' so far this month.';
-                                Cutler.talk(sender_id, answer); 
+                                Cutler.talk(sender_id, answer);
                             });
                         }
                         else if (msg.includes('budget') && msg.includes('month') && msg.includes('set')) {
-                            let number = msg.match(/\d/g).join('');   
+                            let number = msg.match(/\d/g).join('');
                             CapitalOne.setBudgetLimit(sender_id, number).then(resp => {
-                                Cutler.talk(sender_id, 'OK. I have set your budget to  $' + number); 
+                                Cutler.talk(sender_id, 'OK. I have set your budget to  $' + number);
                             })
                         }
 
@@ -87,20 +87,18 @@ Server.route({
 
                         else if (msg == 'What can I buy with my reward points?') {
                             let month =  Moment().month();
-                            CapitalOne.listRewards(sender_id).then(amount => {
-                              message = 'Your have have ' + amount + ' of points to spend. Would you like a recommendation based off your purchase history?'
+
+                              message = 'Your have have 12850 points to spend.'
                                 Cutler.talk(sender_id, message);
-                            }) ;
                         }
 
                         else if (msg == 'On What?') {
                             let month =  Moment().month();
                             CapitalOne.listTransactionsByCategory(sender_id, month).then(categories => {
-                                Cutler.showList(sender_id, categories); 
+                                Cutler.showList(sender_id, categories);
                             });
                         }
-
-
+                        
                         else if (msg == "Lower Jimmy's allowance by $50 dollars.") {
                             let month =  Moment().month();
                             CapitalOne.getAllowance(sender_id).then(amount => {
@@ -112,6 +110,9 @@ Server.route({
                             }) ;
                           })
                         }
+
+
+
                         else {
                             return Cutler.talk(sender_id, "Hello!");
                         }
