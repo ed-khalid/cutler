@@ -36,23 +36,24 @@ Server.route({
     ,path:  '/'
     ,handler: (req,reply) => {
         let payload = req.payload;
-        console.log(payload);
         if (payload['object'] === 'page') {
             payload['entry'].forEach(entry => {
                 entry['messaging'].forEach(event => {
                     if (event['message']) {
                         let sender_id = event['sender']['id'] 
+                        console.log('sender is ' + sender_id);
                         let recipient_id = event['recipient']['id'] 
+                        console.log('recipient is ' + recipient_id);
                         let msg = event['message']['text'] 
 
                         if (msg == 'How Much Did I Spend This Month?') {
                             let month =  Moment().month(); 
-                            CapitalOne.listTransactionsMonth(sender_id,month).then(amount => {
-                                Cutler.talk(sender_id, 'You spent $' + amount +' this month.');
+                            return CapitalOne.listTransactionsMonth(sender_id,month).then(amount => {
+                                return Cutler.talk(sender_id, 'You spent $' + amount +' this month.')
                             }) ;
                         }
                         else {
-                            Cutler.talk(sender_id, "DON'T CAAAARE!");
+                            return Cutler.talk(sender_id, "ADIOS"); 
                         }
                     }
                 })
